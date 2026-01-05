@@ -137,24 +137,38 @@ export default function LoanRepaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+      <div 
+        className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="absolute top-3 sm:top-4 right-3 sm:right-4 p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors z-10"
+          aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-text-main mb-2">
+        {/* Header */}
+        <div className="mb-4 sm:mb-6 pr-10">
+          <h2 className="text-xl sm:text-2xl font-bold text-text-main mb-1 sm:mb-2">
             {isMyDebt ? 'Repay Loan' : 'Record Payment'}
           </h2>
-          <p className="text-text-secondary text-sm">
+          <p className="text-xs sm:text-sm text-text-secondary">
             {isMyDebt 
               ? `Record a repayment to ${personName}` 
               : `Record a payment received from ${personName}`
@@ -163,24 +177,24 @@ export default function LoanRepaymentModal({
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {error}
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-            <Check className="w-4 h-4" />
-            Repayment recorded successfully!
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm flex items-center gap-2">
+            <Check className="w-4 h-4 flex-shrink-0" />
+            <span>Repayment recorded successfully!</span>
           </div>
         )}
 
         {/* Loan Info */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-text-secondary">Remaining Amount</span>
-            <span className="text-2xl font-bold text-text-main">
+            <span className="text-xs sm:text-sm text-text-secondary">Remaining Amount</span>
+            <span className="text-xl sm:text-2xl font-bold text-text-main">
               PKR {fullAmount}
             </span>
           </div>
@@ -190,7 +204,7 @@ export default function LoanRepaymentModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1">
           {/* Repayment Type */}
           <div className="flex gap-2">
             <button
@@ -199,7 +213,7 @@ export default function LoanRepaymentModal({
                 setRepaymentType('full')
                 setRepaymentAmount(remainingAmount.toString())
               }}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors ${
+              className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base active:scale-[0.98] ${
                 repaymentType === 'full'
                   ? 'bg-primary text-text-main shadow-sm'
                   : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
@@ -215,7 +229,7 @@ export default function LoanRepaymentModal({
                   setRepaymentAmount('')
                 }
               }}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors ${
+              className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base active:scale-[0.98] ${
                 repaymentType === 'partial'
                   ? 'bg-primary text-text-main shadow-sm'
                   : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
@@ -228,11 +242,11 @@ export default function LoanRepaymentModal({
           {/* Amount Input */}
           {repaymentType === 'partial' && (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-text-main" htmlFor="amount">
+              <label className="text-xs sm:text-sm font-medium text-text-main" htmlFor="amount">
                 Repayment Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-main text-xl font-bold">
+                <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-text-main text-lg sm:text-xl font-bold">
                   PKR
                 </span>
                 <input
@@ -244,7 +258,7 @@ export default function LoanRepaymentModal({
                   value={repaymentAmount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-16 pr-4 py-3 rounded-lg border border-input-border focus:border-primary focus:ring-2 focus:ring-primary/50 text-lg font-bold"
+                  className="w-full pl-12 sm:pl-16 pr-4 py-3 sm:py-3.5 rounded-lg border border-input-border focus:border-primary focus:ring-2 focus:ring-primary/50 text-base sm:text-lg font-bold"
                   required={repaymentType === 'partial'}
                 />
               </div>
@@ -255,32 +269,33 @@ export default function LoanRepaymentModal({
           )}
 
           {repaymentType === 'full' && (
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg">
               <div className="flex items-center gap-2 text-primary">
-                <DollarSign className="w-5 h-5" />
-                <span className="font-semibold">Full Payment: PKR {fullAmount}</span>
+                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-semibold text-sm sm:text-base">Full Payment: PKR {fullAmount}</span>
               </div>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+          {/* Actions - Sticky on mobile */}
+          <div className="flex gap-3 mt-auto pt-4 sm:pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-text-main font-bold hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-text-main font-bold hover:bg-gray-50 transition-colors active:scale-[0.98] text-sm sm:text-base"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || success}
-              className="flex-1 px-4 py-3 rounded-lg bg-primary text-text-main font-bold hover:brightness-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 rounded-lg bg-primary text-text-main font-bold hover:brightness-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:scale-[0.98]"
             >
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing...
+                  <span className="hidden sm:inline">Processing...</span>
+                  <span className="sm:hidden">Processing</span>
                 </>
               ) : success ? (
                 <>
@@ -300,4 +315,3 @@ export default function LoanRepaymentModal({
     </div>
   )
 }
-

@@ -1,49 +1,86 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { format, startOfMonth, endOfMonth, differenceInDays } from 'date-fns'
 import TransactionCard from '@/components/transactions/TransactionCard'
-import { processRecurringItems } from '@/lib/utils/processRecurring'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CalendarDays, Info, Receipt } from 'lucide-react'
 
-export default async function ThisMonthPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function ThisMonthPage() {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<{
+    transactions: any[]
+    totalIncome: number
+    totalSpent: number
+    remaining: number
+    daysRemaining: number
+    progressPercent: number
+  } | null>(null)
 
-  if (!user) {
-    return <div className="p-8">Please log in to view your dashboard.</div>
-  }
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-  // Process recurring items (auto-generate transactions for new month)
-  await processRecurringItems(supabase, user.id)
+      if (!user) return
 
-  const now = new Date()
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
-  const daysRemaining = differenceInDays(monthEnd, now)
-  const daysInMonth = differenceInDays(monthEnd, monthStart) + 1
-  const progressPercent = ((daysInMonth - daysRemaining) / daysInMonth) * 100
+      const now = new Date()
+      const monthStart = startOfMonth(now)
+      const monthEnd = endOfMonth(now)
+      const daysRemaining = differenceInDays(monthEnd, now)
+      const daysInMonth = differenceInDays(monthEnd, monthStart) + 1
+      const progressPercent = ((daysInMonth - daysRemaining) / daysInMonth) * 100
 
-  // Fetch transactions for this month
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('date', format(monthStart, 'yyyy-MM-dd'))
-    .lte('date', format(monthEnd, 'yyyy-MM-dd'))
-    .order('date', { ascending: false })
+      // Fetch transactions for this month
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'))
+        .order('date', { ascending: false })
 
-  // Calculate totals
-  let totalIncome = 0
-  let totalSpent = 0
+      // Calculate totals
+      let totalIncome = 0
+      let totalSpent = 0
 
-  transactions?.forEach((tx) => {
-    if (tx.type === 'salary' || tx.type === 'loan_received' || tx.type === 'loan_repayment_received') {
-      totalIncome += Number(tx.amount)
-    } else {
-      totalSpent += Number(tx.amount)
+      transactions?.forEach((tx) => {
+        if (tx.type === 'salary' || tx.type === 'loan_received' || tx.type === 'loan_repayment_received') {
+          totalIncome += Number(tx.amount)
+        } else {
+          totalSpent += Number(tx.amount)
+        }
+      })
+
+      const remaining = totalIncome - totalSpent
+
+      setData({
+        transactions: transactions || [],
+        totalIncome,
+        totalSpent,
+        remaining,
+        daysRemaining,
+        progressPercent,
+      })
+      setLoading(false)
     }
-  })
 
-  const remaining = totalIncome - totalSpent
+    fetchData()
+  }, [])
+
+  if (loading || !data) {
+    return (
+      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
@@ -60,7 +97,7 @@ export default async function ThisMonthPage() {
           <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-text-secondary">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-bold px-2">{format(now, 'MMMM yyyy')}</span>
+          <span className="text-sm font-bold px-2">{format(new Date(), 'MMMM yyyy')}</span>
           <button className="p-1 hover:bg-gray-100 rounded-md transition-colors text-text-secondary">
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -76,13 +113,13 @@ export default async function ThisMonthPage() {
           </span>
         </h2>
         <div className={`text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter mb-4 ${
-          remaining >= 0 ? 'text-text-main' : 'text-expense'
+          data.remaining >= 0 ? 'text-text-main' : 'text-expense'
         }`}>
-          PKR {remaining.toLocaleString()}
+          PKR {data.remaining.toLocaleString()}
         </div>
-        {remaining > 0 && (
+        {data.remaining > 0 && (
           <p className="text-sm text-text-secondary font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-            On track to save PKR {Math.floor(remaining * 0.3).toLocaleString()}
+            On track to save PKR {Math.floor(data.remaining * 0.3).toLocaleString()}
           </p>
         )}
       </section>
@@ -99,7 +136,7 @@ export default async function ThisMonthPage() {
             INCOME
           </div>
           <div className="text-2xl font-bold text-text-main tracking-tight">
-            PKR {totalIncome.toLocaleString()}
+            PKR {data.totalIncome.toLocaleString()}
           </div>
           <div className="text-xs text-primary font-medium mt-auto">This month</div>
         </div>
@@ -114,7 +151,7 @@ export default async function ThisMonthPage() {
             SPENT
           </div>
           <div className="text-2xl font-bold text-text-main tracking-tight">
-            PKR {totalSpent.toLocaleString()}
+            PKR {data.totalSpent.toLocaleString()}
           </div>
           <div className="text-xs text-expense font-medium mt-auto">This month</div>
         </div>
@@ -129,12 +166,12 @@ export default async function ThisMonthPage() {
             TIME LEFT
           </div>
           <div className="text-2xl font-bold text-text-main tracking-tight">
-            {daysRemaining} Days
+            {data.daysRemaining} Days
           </div>
           <div className="w-full bg-gray-100 rounded-full h-1.5 mt-auto">
             <div 
               className="bg-gray-400 h-1.5 rounded-full transition-all" 
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `${data.progressPercent}%` }}
             ></div>
           </div>
         </div>
@@ -148,8 +185,8 @@ export default async function ThisMonthPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-100">
-          {transactions && transactions.length > 0 ? (
-            transactions.map((tx) => (
+          {data.transactions.length > 0 ? (
+            data.transactions.map((tx) => (
               <TransactionCard key={tx.id} transaction={tx} />
             ))
           ) : (

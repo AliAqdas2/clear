@@ -1,59 +1,103 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import AddFriendButton from '@/components/friends/AddFriendButton'
 import FriendCard from '@/components/friends/FriendCard'
 import { ChevronRight, Bell, TrendingUp, TrendingDown, UserPlus } from 'lucide-react'
 
-export default async function FriendsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function FriendsPage() {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<{
+    pendingRequests: any[]
+    acceptedFriends: any[]
+    balanceMap: Record<string, number>
+    totalOwedToMe: number
+    totalIOwe: number
+  } | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
-  if (!user) {
-    return <div className="p-8">Please log in to view your friends.</div>
-  }
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch friendships with profiles
-  const { data: friendships } = await supabase
-    .from('friendships')
-    .select('*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)')
-    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
-    .order('created_at', { ascending: false })
+      if (!user) return
 
-  // Separate pending requests and accepted friends
-  const pendingRequests = friendships?.filter(
-    (fs) => fs.status === 'pending' && fs.addressee_id === user.id
-  ) || []
+      setUserId(user.id)
 
-  const acceptedFriends = friendships?.filter((fs) => fs.status === 'accepted') || []
+      // Fetch friendships with profiles
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+        .order('created_at', { ascending: false })
 
-  // Calculate balances per friend from loans
-  const { data: loans } = await supabase
-    .from('loans')
-    .select('*')
-    .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
-    .neq('status', 'repaid')
+      // Separate pending requests and accepted friends
+      const pendingRequests = friendships?.filter(
+        (fs) => fs.status === 'pending' && fs.addressee_id === user.id
+      ) || []
 
-  // Build balance map
-  const balanceMap: Record<string, number> = {}
-  loans?.forEach((loan) => {
-    const remaining = Number(loan.remaining_amount || loan.amount)
-    if (loan.lender_id === user.id) {
-      // I lent money - they owe me
-      const friendId = loan.borrower_id
-      balanceMap[friendId] = (balanceMap[friendId] || 0) + remaining
-    } else {
-      // I borrowed - I owe them
-      const friendId = loan.lender_id
-      balanceMap[friendId] = (balanceMap[friendId] || 0) - remaining
+      const acceptedFriends = friendships?.filter((fs) => fs.status === 'accepted') || []
+
+      // Calculate balances per friend from loans
+      const { data: loans } = await supabase
+        .from('loans')
+        .select('*')
+        .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
+        .neq('status', 'repaid')
+
+      // Build balance map
+      const balanceMap: Record<string, number> = {}
+      loans?.forEach((loan) => {
+        const remaining = Number(loan.remaining_amount || loan.amount)
+        if (loan.lender_id === user.id) {
+          // I lent money - they owe me
+          const friendId = loan.borrower_id
+          balanceMap[friendId] = (balanceMap[friendId] || 0) + remaining
+        } else {
+          // I borrowed - I owe them
+          const friendId = loan.lender_id
+          balanceMap[friendId] = (balanceMap[friendId] || 0) - remaining
+        }
+      })
+
+      // Calculate totals
+      let totalOwedToMe = 0
+      let totalIOwe = 0
+      Object.values(balanceMap).forEach((balance) => {
+        if (balance > 0) totalOwedToMe += balance
+        else totalIOwe += Math.abs(balance)
+      })
+
+      setData({
+        pendingRequests,
+        acceptedFriends,
+        balanceMap,
+        totalOwedToMe,
+        totalIOwe,
+      })
+      setLoading(false)
     }
-  })
 
-  // Calculate totals
-  let totalOwedToMe = 0
-  let totalIOwe = 0
-  Object.values(balanceMap).forEach((balance) => {
-    if (balance > 0) totalOwedToMe += balance
-    else totalIOwe += Math.abs(balance)
-  })
+    fetchData()
+  }, [])
+
+  if (loading || !data || !userId) {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="h-16 bg-gray-200 animate-pulse"></div>
+        <div className="flex-1 p-8">
+          <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -67,7 +111,7 @@ export default async function FriendsPage() {
         <div className="flex items-center gap-4">
           <button className="relative p-2 rounded-lg text-gray-500 hover:bg-background-light transition-colors">
             <Bell className="w-5 h-5" />
-            {pendingRequests.length > 0 && (
+            {data.pendingRequests.length > 0 && (
               <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white"></span>
             )}
           </button>
@@ -92,8 +136,8 @@ export default async function FriendsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Total Owed to You</p>
                 <div className="flex items-baseline gap-2">
-                  <h3 className="text-3xl font-bold text-text-main">PKR {totalOwedToMe.toLocaleString()}</h3>
-                  {totalOwedToMe > 0 && (
+                  <h3 className="text-3xl font-bold text-text-main">PKR {data.totalOwedToMe.toLocaleString()}</h3>
+                  {data.totalOwedToMe > 0 && (
                     <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                       Receivable
                     </span>
@@ -109,8 +153,8 @@ export default async function FriendsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Total You Owe</p>
                 <div className="flex items-baseline gap-2">
-                  <h3 className="text-3xl font-bold text-text-main">PKR {totalIOwe.toLocaleString()}</h3>
-                  {totalIOwe > 0 && (
+                  <h3 className="text-3xl font-bold text-text-main">PKR {data.totalIOwe.toLocaleString()}</h3>
+                  {data.totalIOwe > 0 && (
                     <span className="text-xs font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
                       Payable
                     </span>
@@ -136,25 +180,25 @@ export default async function FriendsPage() {
             {/* List Items */}
             <div className="divide-y divide-border-light">
               {/* Pending Requests */}
-              {pendingRequests.map((fs) => (
+              {data.pendingRequests.map((fs) => (
                 <FriendCard
                   key={fs.id}
                   friendship={fs}
-                  currentUserId={user.id}
+                  currentUserId={userId}
                   balance={0}
                   isPending={true}
                 />
               ))}
 
               {/* Accepted Friends */}
-              {acceptedFriends.map((fs) => {
-                const friend = fs.requester_id === user.id ? fs.addressee : fs.requester
-                const balance = balanceMap[friend.id] || 0
+              {data.acceptedFriends.map((fs) => {
+                const friend = fs.requester_id === userId ? fs.addressee : fs.requester
+                const balance = data.balanceMap[friend.id] || 0
                 return (
                   <FriendCard
                     key={fs.id}
                     friendship={fs}
-                    currentUserId={user.id}
+                    currentUserId={userId}
                     balance={balance}
                     isPending={false}
                   />
@@ -162,7 +206,7 @@ export default async function FriendsPage() {
               })}
 
               {/* Empty State */}
-              {friendships?.length === 0 && (
+              {data.pendingRequests.length === 0 && data.acceptedFriends.length === 0 && (
                 <div className="py-12 text-center">
                   <div className="size-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
                     <UserPlus className="w-8 h-8 text-gray-400" />
@@ -177,7 +221,7 @@ export default async function FriendsPage() {
           </div>
 
           {/* Empty State Hint */}
-          {acceptedFriends.length > 0 && (
+          {data.acceptedFriends.length > 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="size-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-4">
                 <UserPlus className="w-8 h-8" />

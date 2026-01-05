@@ -1,4 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { processRecurringItems } from '@/lib/utils/processRecurring'
 import Link from 'next/link'
@@ -10,87 +13,131 @@ import {
   ArrowRight,
   Wallet,
   Calendar,
-  Users
 } from 'lucide-react'
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<{
+    remainingThisMonth: number
+    totalIncome: number
+    totalSpent: number
+    totalOwedToMe: number
+    totalIOwe: number
+    loansCount: number
+    recurringIncome: number
+    recurringExpenses: number
+    recurringIncomeCount: number
+    recurringExpensesCount: number
+  } | null>(null)
 
-  if (!user) {
-    return <div className="p-8">Please log in to view your dashboard.</div>
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      // Process recurring items
+      await processRecurringItems(supabase, user.id)
+
+      const now = new Date()
+      const monthStart = startOfMonth(now)
+      const monthEnd = endOfMonth(now)
+
+      // Fetch this month's transactions
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'))
+
+      // Calculate this month's totals
+      let totalIncome = 0
+      let totalSpent = 0
+      transactions?.forEach((tx) => {
+        if (tx.type === 'salary' || tx.type === 'loan_received' || tx.type === 'loan_repayment_received') {
+          totalIncome += Number(tx.amount)
+        } else {
+          totalSpent += Number(tx.amount)
+        }
+      })
+      const remainingThisMonth = totalIncome - totalSpent
+
+      // Fetch loans
+      const { data: loans } = await supabase
+        .from('loans')
+        .select('*, lender:profiles!loans_lender_id_fkey(*), borrower:profiles!loans_borrower_id_fkey(*)')
+        .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
+        .neq('status', 'repaid')
+
+      // Calculate loan totals
+      let totalOwedToMe = 0
+      let totalIOwe = 0
+      loans?.forEach((loan) => {
+        const remaining = Number(loan.remaining_amount || loan.amount)
+        const isNonPlatformLoan = loan.lender_id === loan.borrower_id
+        
+        if (isNonPlatformLoan) {
+          const isBorrowed = loan.notes?.startsWith('From:')
+          if (isBorrowed) {
+            totalIOwe += remaining
+          } else {
+            totalOwedToMe += remaining
+          }
+        } else if (loan.borrower_id === user.id) {
+          totalIOwe += remaining
+        } else {
+          totalOwedToMe += remaining
+        }
+      })
+
+      // Fetch recurring items
+      const { data: recurringItems } = await supabase
+        .from('recurring_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+
+      // Calculate recurring totals
+      const recurringIncome = recurringItems
+        ?.filter((item) => item.type === 'income' || item.type === 'salary')
+        .reduce((sum, item) => sum + Number(item.amount), 0) || 0
+
+      const recurringExpenses = recurringItems
+        ?.filter((item) => item.type !== 'income' && item.type !== 'salary')
+        .reduce((sum, item) => sum + Number(item.amount), 0) || 0
+
+      setData({
+        remainingThisMonth,
+        totalIncome,
+        totalSpent,
+        totalOwedToMe,
+        totalIOwe,
+        loansCount: loans?.length || 0,
+        recurringIncome,
+        recurringExpenses,
+        recurringIncomeCount: recurringItems?.filter((i) => i.type === 'income' || i.type === 'salary').length || 0,
+        recurringExpensesCount: recurringItems?.filter((i) => i.type !== 'income' && i.type !== 'salary').length || 0,
+      })
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading || !data) {
+    return (
+      <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    )
   }
-
-  // Process recurring items
-  await processRecurringItems(supabase, user.id)
-
-  const now = new Date()
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
-
-  // Fetch this month's transactions
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('date', format(monthStart, 'yyyy-MM-dd'))
-    .lte('date', format(monthEnd, 'yyyy-MM-dd'))
-
-  // Calculate this month's totals
-  let totalIncome = 0
-  let totalSpent = 0
-  transactions?.forEach((tx) => {
-    if (tx.type === 'salary' || tx.type === 'loan_received' || tx.type === 'loan_repayment_received') {
-      totalIncome += Number(tx.amount)
-    } else {
-      totalSpent += Number(tx.amount)
-    }
-  })
-  const remainingThisMonth = totalIncome - totalSpent
-
-  // Fetch loans
-  const { data: loans } = await supabase
-    .from('loans')
-    .select('*, lender:profiles!loans_lender_id_fkey(*), borrower:profiles!loans_borrower_id_fkey(*)')
-    .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
-    .neq('status', 'repaid')
-
-  // Calculate loan totals
-  let totalOwedToMe = 0
-  let totalIOwe = 0
-  loans?.forEach((loan) => {
-    const remaining = Number(loan.remaining_amount || loan.amount)
-    const isNonPlatformLoan = loan.lender_id === loan.borrower_id
-    
-    if (isNonPlatformLoan) {
-      const isBorrowed = loan.notes?.startsWith('From:')
-      if (isBorrowed) {
-        totalIOwe += remaining
-      } else {
-        totalOwedToMe += remaining
-      }
-    } else if (loan.borrower_id === user.id) {
-      totalIOwe += remaining
-    } else {
-      totalOwedToMe += remaining
-    }
-  })
-
-  // Fetch recurring items
-  const { data: recurringItems } = await supabase
-    .from('recurring_items')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-
-  // Calculate recurring totals
-  const recurringIncome = recurringItems
-    ?.filter((item) => item.type === 'income' || item.type === 'salary')
-    .reduce((sum, item) => sum + Number(item.amount), 0) || 0
-
-  const recurringExpenses = recurringItems
-    ?.filter((item) => item.type !== 'income' && item.type !== 'salary')
-    .reduce((sum, item) => sum + Number(item.amount), 0) || 0
 
   return (
     <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
@@ -121,17 +168,17 @@ export default async function DashboardPage() {
             </div>
             <ArrowRight className="w-5 h-5 text-text-secondary group-hover:text-primary group-hover:translate-x-1 transition-all" />
           </div>
-          <p className={`text-3xl font-bold ${remainingThisMonth >= 0 ? 'text-success' : 'text-expense'}`}>
-            PKR {remainingThisMonth.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          <p className={`text-3xl font-bold ${data.remainingThisMonth >= 0 ? 'text-success' : 'text-expense'}`}>
+            PKR {data.remainingThisMonth.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-text-secondary">
             <span className="flex items-center gap-1">
               <TrendingUp className="w-4 h-4 text-success" />
-              PKR {totalIncome.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              PKR {data.totalIncome.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
             <span className="flex items-center gap-1">
               <TrendingDown className="w-4 h-4 text-expense" />
-              PKR {totalSpent.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              PKR {data.totalSpent.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>
         </Link>
@@ -157,18 +204,18 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-secondary">Owed to me</span>
               <span className="text-lg font-bold text-success">
-                PKR {totalOwedToMe.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                PKR {data.totalOwedToMe.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-secondary">I owe</span>
               <span className="text-lg font-bold text-expense">
-                PKR {totalIOwe.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                PKR {data.totalIOwe.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             </div>
             <div className="pt-2 mt-2 border-t border-border-light">
               <span className="text-xs text-text-secondary">
-                {loans?.length || 0} active {loans?.length === 1 ? 'loan' : 'loans'}
+                {data.loansCount} active {data.loansCount === 1 ? 'loan' : 'loans'}
               </span>
             </div>
           </div>
@@ -192,10 +239,10 @@ export default async function DashboardPage() {
             <ArrowRight className="w-5 h-5 text-text-secondary group-hover:text-primary group-hover:translate-x-1 transition-all" />
           </div>
           <p className="text-3xl font-bold text-success">
-            PKR {recurringIncome.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            PKR {data.recurringIncome.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </p>
           <p className="text-xs text-text-secondary mt-2">
-            {recurringItems?.filter((i) => i.type === 'income' || i.type === 'salary').length || 0} active items
+            {data.recurringIncomeCount} active items
           </p>
         </Link>
 
@@ -217,10 +264,10 @@ export default async function DashboardPage() {
             <ArrowRight className="w-5 h-5 text-text-secondary group-hover:text-primary group-hover:translate-x-1 transition-all" />
           </div>
           <p className="text-3xl font-bold text-expense">
-            PKR {recurringExpenses.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            PKR {data.recurringExpenses.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </p>
           <p className="text-xs text-text-secondary mt-2">
-            {recurringItems?.filter((i) => i.type !== 'income' && i.type !== 'salary').length || 0} active items
+            {data.recurringExpensesCount} active items
           </p>
         </Link>
       </div>

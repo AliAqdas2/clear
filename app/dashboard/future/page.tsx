@@ -1,68 +1,110 @@
-import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
-import { TrendingDown, ArrowDown, ArrowUp, Scale, Calendar } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import LoansTable from '@/components/loans/LoansTable'
+import { TrendingDown, ArrowDown, ArrowUp, Scale } from 'lucide-react'
 
-export default async function FuturePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function FuturePage() {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<{
+    loans: any[]
+    totalLoansOnMe: number
+    willReceive: number
+    mustPay: number
+    netPosition: number
+    debtPercentage: number
+  } | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
-  if (!user) {
-    return <div className="p-8">Please log in to view your future commitments.</div>
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      setUserId(user.id)
+
+      // Fetch loans where user is lender or borrower
+      const { data: loans } = await supabase
+        .from('loans')
+        .select('*, lender:profiles!loans_lender_id_fkey(*), borrower:profiles!loans_borrower_id_fkey(*)')
+        .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
+        .neq('status', 'repaid')
+        .order('due_date', { ascending: true })
+
+      // Fetch recurring items
+      const { data: recurringItems } = await supabase
+        .from('recurring_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('next_date', { ascending: true })
+
+      // Calculate totals
+      let totalLoansOnMe = 0
+      let willReceive = 0
+      let mustPay = 0
+
+      loans?.forEach((loan) => {
+        const remainingAmount = Number(loan.remaining_amount || loan.amount)
+        const isNonPlatformLoan = loan.lender_id === loan.borrower_id
+        
+        if (isNonPlatformLoan) {
+          const isBorrowed = loan.notes?.startsWith('From:')
+          if (isBorrowed) {
+            totalLoansOnMe += remainingAmount
+            mustPay += remainingAmount
+          } else {
+            willReceive += remainingAmount
+          }
+        } else if (loan.borrower_id === user.id) {
+          totalLoansOnMe += remainingAmount
+          mustPay += remainingAmount
+        } else {
+          willReceive += remainingAmount
+        }
+      })
+
+      // Add recurring items
+      recurringItems?.forEach((item) => {
+        if (item.type === 'income' || item.type === 'salary') {
+          willReceive += Number(item.amount)
+        } else {
+          mustPay += Number(item.amount)
+        }
+      })
+
+      const netPosition = willReceive - mustPay
+      const maxDebt = Math.max(totalLoansOnMe, willReceive, 1)
+      const debtPercentage = (totalLoansOnMe / maxDebt) * 100 * 0.75
+
+      setData({
+        loans: loans || [],
+        totalLoansOnMe,
+        willReceive,
+        mustPay,
+        netPosition,
+        debtPercentage,
+      })
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading || !data || !userId) {
+    return (
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        <div className="h-64 w-64 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    )
   }
-
-  // Fetch loans where user is lender or borrower
-  const { data: loans } = await supabase
-    .from('loans')
-    .select('*, lender:profiles!loans_lender_id_fkey(*), borrower:profiles!loans_borrower_id_fkey(*)')
-    .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
-    .neq('status', 'repaid')
-    .order('due_date', { ascending: true })
-
-  // Fetch recurring items
-  const { data: recurringItems } = await supabase
-    .from('recurring_items')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('next_date', { ascending: true })
-
-  // Calculate totals
-  let totalLoansOnMe = 0  // Loans I need to repay
-  let willReceive = 0     // Loans owed to me
-  let mustPay = 0         // All outgoing (loans I owe + recurring expenses)
-
-  loans?.forEach((loan) => {
-    const remainingAmount = Number(loan.remaining_amount || loan.amount)
-    const isNonPlatformLoan = loan.lender_id === loan.borrower_id
-    
-    if (isNonPlatformLoan) {
-      const isBorrowed = loan.notes?.startsWith('From:')
-      if (isBorrowed) {
-        totalLoansOnMe += remainingAmount
-        mustPay += remainingAmount
-      } else {
-        willReceive += remainingAmount
-      }
-    } else if (loan.borrower_id === user.id) {
-      totalLoansOnMe += remainingAmount
-      mustPay += remainingAmount
-    } else {
-      willReceive += remainingAmount
-    }
-  })
-
-  // Add recurring items
-  recurringItems?.forEach((item) => {
-    if (item.type === 'income' || item.type === 'salary') {
-      willReceive += Number(item.amount)
-    } else {
-      mustPay += Number(item.amount)
-    }
-  })
-
-  const netPosition = willReceive - mustPay
-  const maxDebt = Math.max(totalLoansOnMe, willReceive, 1)
-  const debtPercentage = (totalLoansOnMe / maxDebt) * 100 * 0.75
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 overflow-y-auto pb-24 md:pb-8 overflow-x-hidden">
@@ -90,7 +132,7 @@ export default async function FuturePage() {
               r="45"
               stroke="currentColor"
               strokeDasharray="283"
-              strokeDashoffset={283 - (283 * Math.min(debtPercentage, 75)) / 100}
+              strokeDashoffset={283 - (283 * Math.min(data.debtPercentage, 75)) / 100}
               strokeLinecap="round"
               strokeWidth="8"
             />
@@ -104,7 +146,7 @@ export default async function FuturePage() {
               Loans on Me
             </span>
             <span className="text-3xl sm:text-4xl md:text-5xl font-black text-text-main tracking-tight">
-              {totalLoansOnMe >= 1000 ? `${(totalLoansOnMe / 1000).toFixed(0)}k` : totalLoansOnMe.toLocaleString()}
+              {data.totalLoansOnMe >= 1000 ? `${(data.totalLoansOnMe / 1000).toFixed(0)}k` : data.totalLoansOnMe.toLocaleString()}
             </span>
             <span className="text-[10px] sm:text-xs font-medium text-danger mt-1 sm:mt-1.5">PKR Total Exposure</span>
           </div>
@@ -120,7 +162,7 @@ export default async function FuturePage() {
               <span className="text-xs sm:text-sm font-semibold text-text-secondary">Will Receive</span>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-text-main mb-1">
-              <span className="text-success">+</span> {willReceive.toLocaleString()}
+              <span className="text-success">+</span> {data.willReceive.toLocaleString()}
             </div>
             <p className="text-[10px] sm:text-xs font-medium text-success bg-success/5 px-2 py-0.5 sm:py-1 rounded-full">
               Expected income
@@ -136,7 +178,7 @@ export default async function FuturePage() {
               <span className="text-xs sm:text-sm font-semibold text-text-secondary">Must Pay</span>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-text-main mb-1">
-              <span className="text-danger">-</span> {mustPay.toLocaleString()}
+              <span className="text-danger">-</span> {data.mustPay.toLocaleString()}
             </div>
             <p className="text-[10px] sm:text-xs font-medium text-danger bg-danger/5 px-2 py-0.5 sm:py-1 rounded-full">
               Upcoming obligations
@@ -151,13 +193,13 @@ export default async function FuturePage() {
               </div>
               <span className="text-xs sm:text-sm font-semibold text-text-secondary">Net Future Position</span>
             </div>
-            <div className={`text-2xl sm:text-3xl font-bold mb-1 ${netPosition >= 0 ? 'text-info' : 'text-danger'}`}>
-              {netPosition >= 0 ? '+' : ''} {netPosition.toLocaleString()}
+            <div className={`text-2xl sm:text-3xl font-bold mb-1 ${data.netPosition >= 0 ? 'text-info' : 'text-danger'}`}>
+              {data.netPosition >= 0 ? '+' : ''} {data.netPosition.toLocaleString()}
             </div>
             <p className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full ${
-              netPosition >= 0 ? 'text-info bg-info/5' : 'text-danger bg-danger/5'
+              data.netPosition >= 0 ? 'text-info bg-info/5' : 'text-danger bg-danger/5'
             }`}>
-              {netPosition >= 0 ? 'Healthy Liquidity' : 'Deficit Warning'}
+              {data.netPosition >= 0 ? 'Healthy Liquidity' : 'Deficit Warning'}
             </p>
           </div>
         </div>
@@ -185,7 +227,7 @@ export default async function FuturePage() {
         </div>
 
         {/* Loans List - Mobile cards, Desktop table */}
-        <LoansTable loans={loans || []} userId={user.id} />
+        <LoansTable loans={data.loans} userId={userId} />
       </div>
     </div>
   )

@@ -68,7 +68,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
@@ -84,8 +84,11 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
       
       {/* Modal Card - Mobile: Bottom sheet with safe padding, Desktop: Centered */}
       <div 
-        className="relative w-full sm:max-w-[640px] transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl transition-all flex flex-col max-h-[calc(100vh-4rem)] sm:max-h-[90vh] mt-4 sm:mt-0 mb-16 sm:mb-0"
+        className="relative w-full sm:max-w-[640px] transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl transition-all flex flex-col max-h-[calc(100vh-1rem)] sm:max-h-[90vh] mt-4 sm:mt-0 mb-20 sm:mb-0 mx-0 sm:mx-4"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          maxHeight: 'calc(100vh - 5rem)',
+        }}
       >
         {/* Header Section - Sticky on mobile */}
         <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-6 pb-3 sm:pb-4 flex-shrink-0">

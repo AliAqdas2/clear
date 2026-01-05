@@ -95,23 +95,27 @@ export default function FuturePage() {
 
   if (loading || !data || !userId) {
     return (
-      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-        <div className="h-48 w-48 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
-          ))}
+      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
+        <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full">
+          <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px]">
+            <div className="w-full h-full bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+            ))}
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
+    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8 min-w-0">
       {/* Header Visualization Section */}
-      <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full">
+      <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full min-w-0">
         {/* Debt Meter - Responsive, matches other pages */}
-        <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px]">
+        <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px] flex-shrink-0">
           <div className="absolute inset-0 bg-danger/10 blur-3xl rounded-full"></div>
           
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
@@ -145,7 +149,7 @@ export default function FuturePage() {
             <span className="text-xs sm:text-sm font-medium text-text-secondary uppercase tracking-wider mb-1">
               Loans on Me
             </span>
-            <span className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main tracking-tight">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main tracking-tight break-words text-center">
               {data.totalLoansOnMe >= 1000 ? `${(data.totalLoansOnMe / 1000).toFixed(0)}k` : data.totalLoansOnMe.toLocaleString()}
             </span>
             <span className="text-[10px] sm:text-xs font-medium text-danger mt-1">PKR Total Exposure</span>
@@ -153,7 +157,7 @@ export default function FuturePage() {
         </div>
 
         {/* Summary Stats Cards */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4 min-w-0">
           <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300">
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <div className="p-2 bg-success/10 rounded-lg">
@@ -206,7 +210,7 @@ export default function FuturePage() {
       </div>
 
       {/* Commitments List Section */}
-      <div className="flex flex-col gap-4 sm:gap-6 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full">
+      <div className="flex flex-col gap-4 sm:gap-6 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full min-w-0 overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-text-main">Commitments List</h3>

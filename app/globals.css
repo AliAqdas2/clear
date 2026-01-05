@@ -1,26 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  /* Colors - matching stitch_main_dashboard exactly */
+  --color-primary: #19e65e;
+  --color-primary-hover: #14cc52;
+  --color-primary-dark: #14b84b;
+  
+  --color-background-light: #f6f8f6;
+  --color-background-dark: #112116;
+  
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #1c2e24;
+  
+  --color-text-main: #111813;
+  --color-text-secondary: #63886f;
+  
+  --color-expense: #ef4444;
+  --color-danger: #ef4444;
+  --color-success: #19e65e;
+  --color-info: #3b82f6;
+  
+  --color-border-light: #e5e8e6;
+  --color-border-dark: #2a4030;
+  --color-input-border: #dce5df;
+  
+  /* Fonts */
+  --font-display: Manrope, sans-serif;
+  --font-body: Manrope, sans-serif;
+  
+  /* Border Radius */
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Manrope', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #2a4030;
 }

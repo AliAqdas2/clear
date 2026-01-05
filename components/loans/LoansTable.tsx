@@ -13,6 +13,7 @@ interface Loan {
   notes: string | null
   lender_id: string
   borrower_id: string
+  status: 'pending' | 'accepted' | 'active' | 'repaid' | 'cancelled'
   lender?: { username: string; real_name: string | null }
   borrower?: { username: string; real_name: string | null }
 }

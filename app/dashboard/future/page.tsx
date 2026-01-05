@@ -95,8 +95,8 @@ export default function FuturePage() {
 
   if (loading || !data || !userId) {
     return (
-      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
-        <div className="h-64 w-64 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
+      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        <div className="h-48 w-48 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
@@ -107,14 +107,14 @@ export default function FuturePage() {
   }
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 overflow-y-auto pb-24 md:pb-8 overflow-x-hidden">
+    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
       {/* Header Visualization Section */}
       <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full">
-        {/* Debt Meter - Larger on Mobile */}
-        <div className="relative flex items-center justify-center group cursor-default w-full max-w-[280px] sm:max-w-sm">
+        {/* Debt Meter - Responsive, matches other pages */}
+        <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px]">
           <div className="absolute inset-0 bg-danger/10 blur-3xl rounded-full"></div>
           
-          <svg className="w-[280px] h-[280px] sm:w-56 sm:h-56 md:w-64 md:h-64 transform -rotate-90" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={{ maxWidth: '100%', height: 'auto' }}>
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
             <circle
               className="text-gray-200"
               cx="50"
@@ -139,22 +139,22 @@ export default function FuturePage() {
           </svg>
           
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-            <div className="p-2.5 sm:p-3 bg-danger/10 rounded-full mb-1.5 sm:mb-2">
-              <TrendingDown className="w-7 h-7 sm:w-8 sm:h-8 text-danger" />
+            <div className="p-2 sm:p-3 bg-danger/10 rounded-full mb-1 sm:mb-2">
+              <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-danger" />
             </div>
-            <span className="text-xs sm:text-sm font-medium text-text-secondary uppercase tracking-wider mb-1 sm:mb-1.5">
+            <span className="text-xs sm:text-sm font-medium text-text-secondary uppercase tracking-wider mb-1">
               Loans on Me
             </span>
-            <span className="text-3xl sm:text-4xl md:text-5xl font-black text-text-main tracking-tight">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main tracking-tight">
               {data.totalLoansOnMe >= 1000 ? `${(data.totalLoansOnMe / 1000).toFixed(0)}k` : data.totalLoansOnMe.toLocaleString()}
             </span>
-            <span className="text-[10px] sm:text-xs font-medium text-danger mt-1 sm:mt-1.5">PKR Total Exposure</span>
+            <span className="text-[10px] sm:text-xs font-medium text-danger mt-1">PKR Total Exposure</span>
           </div>
         </div>
 
         {/* Summary Stats Cards */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
-          <div className="bg-surface-light p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300">
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <div className="p-2 bg-success/10 rounded-lg">
                 <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
@@ -169,7 +169,7 @@ export default function FuturePage() {
             </p>
           </div>
 
-          <div className="bg-surface-light p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16 bg-danger/5 rounded-bl-full -mr-2 -mt-2"></div>
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <div className="p-2 bg-danger/10 rounded-lg">
@@ -185,8 +185,8 @@ export default function FuturePage() {
             </p>
           </div>
 
-          <div className="bg-surface-light p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-md border border-info/20 flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-info rounded-l-xl sm:rounded-l-2xl"></div>
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-info/20 shadow-md flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-info rounded-l-xl"></div>
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <div className="p-2 bg-info/10 rounded-lg">
                 <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
@@ -206,7 +206,7 @@ export default function FuturePage() {
       </div>
 
       {/* Commitments List Section */}
-      <div className="flex flex-col gap-4 sm:gap-6 bg-surface-light rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full overflow-x-hidden">
+      <div className="flex flex-col gap-4 sm:gap-6 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-text-main">Commitments List</h3>

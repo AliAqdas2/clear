@@ -138,7 +138,7 @@ export default function LoanRepaymentModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
@@ -151,7 +151,7 @@ export default function LoanRepaymentModal({
         aria-hidden="true"
       />
       <div 
-        className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col"
+        className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-4 sm:p-6 max-h-[calc(100vh-4rem)] sm:max-h-[90vh] overflow-y-auto flex flex-col mt-4 sm:mt-0 mb-16 sm:mb-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

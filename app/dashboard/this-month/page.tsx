@@ -71,10 +71,9 @@ export default async function ThisMonthPage() {
       <section className="flex flex-col items-center justify-center py-8 sm:py-12 bg-white rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-text-secondary text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
           <span>💰 Remaining This Month</span>
-          <Info 
-            className="w-4 h-4 cursor-help" 
-            title="Calculated as (Income + Loans Received) - (Expenses + Loans Given)"
-          />
+          <span title="Calculated as (Income + Loans Received) - (Expenses + Loans Given)">
+            <Info className="w-4 h-4 cursor-help" />
+          </span>
         </h2>
         <div className={`text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter mb-4 ${
           remaining >= 0 ? 'text-text-main' : 'text-expense'

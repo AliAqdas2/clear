@@ -26,12 +26,12 @@ export default async function DashboardLayout({
     .single()
 
   return (
-    <div className="bg-background-light text-text-main font-display min-h-screen flex">
+    <div className="bg-background-light text-text-main font-display min-h-screen flex overflow-x-hidden">
       {/* Sidebar - Desktop - Stable, doesn't re-render */}
       <Sidebar profile={profile} />
 
       {/* Main Content - Only this area updates on navigation */}
-      <main className="flex-1 flex flex-col min-h-screen pb-20 md:pb-0">
+      <main className="flex-1 flex flex-col min-h-screen pb-20 md:pb-0 overflow-x-hidden">
         {children}
       </main>
 

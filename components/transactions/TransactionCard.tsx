@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { 
   Banknote, ShoppingCart, Home, Car, Clapperboard, Zap, 
-  Receipt, Handshake, RefreshCw 
+  Receipt, Handshake, RefreshCw, Edit, Trash2, MoreVertical
 } from 'lucide-react'
 import { ComponentType } from 'react'
+import EditTransactionModal from './EditTransactionModal'
 
 interface Transaction {
   id: string
@@ -62,15 +64,23 @@ const getTransactionLabel = (type: string) => {
 }
 
 export default function TransactionCard({ transaction }: TransactionCardProps) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [showActions, setShowActions] = useState(false)
   const isIncome = ['salary', 'loan_received', 'loan_repayment_received'].includes(transaction.type)
   const Icon = getTransactionIcon(transaction.type, transaction.category)
   const label = getTransactionLabel(transaction.type)
   const isLoan = transaction.type.includes('loan')
+  const canEdit = !isLoan // Don't allow editing loan transactions from here
 
   return (
-    <div className={`group p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0 ${
-      isLoan && isIncome ? 'border-l-4 border-l-primary' : ''
-    }`}>
+    <>
+      <div 
+        className={`group p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 relative ${
+          isLoan && isIncome ? 'border-l-4 border-l-primary' : ''
+        }`}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
+      >
       {/* Mobile Layout */}
       <div className="md:hidden">
         <div className="flex items-start gap-3">
@@ -84,8 +94,22 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
               <p className="font-bold text-text-main text-base flex-1 min-w-0">
                 {transaction.description || transaction.category || 'Transaction'}
               </p>
-              <div className={`font-bold text-lg flex-shrink-0 ${isIncome ? 'text-success' : 'text-expense'}`}>
-                {isIncome ? '+' : '-'} PKR {Number(transaction.amount).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              <div className="flex items-center gap-2">
+                <div className={`font-bold text-lg flex-shrink-0 ${isIncome ? 'text-success' : 'text-expense'}`}>
+                  {isIncome ? '+' : '-'} PKR {Number(transaction.amount).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </div>
+                {canEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditModalOpen(true)
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-gray-200 active:bg-gray-300 text-gray-600 transition-colors flex-shrink-0"
+                    aria-label="Edit transaction"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -122,10 +146,34 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
             </div>
           </div>
         </div>
-        <div className={`font-bold text-lg flex-shrink-0 ${isIncome ? 'text-primary' : 'text-expense'}`}>
-          {isIncome ? '+' : '-'} PKR {Number(transaction.amount).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+        <div className="flex items-center gap-3">
+          <div className={`font-bold text-lg flex-shrink-0 ${isIncome ? 'text-primary' : 'text-expense'}`}>
+            {isIncome ? '+' : '-'} PKR {Number(transaction.amount).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          </div>
+          {canEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsEditModalOpen(true)
+              }}
+              className="p-2 rounded-lg hover:bg-gray-200 active:bg-gray-300 text-gray-600 transition-colors"
+              aria-label="Edit transaction"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
+
+    {/* Edit Modal */}
+    {canEdit && (
+      <EditTransactionModal
+        transaction={transaction}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
+    )}
+    </>
   )
 }

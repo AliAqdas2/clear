@@ -138,6 +138,9 @@ CREATE POLICY "Users can create loans" ON loans
 CREATE POLICY "Users can update loans they're part of" ON loans
   FOR UPDATE USING (auth.uid() = lender_id OR auth.uid() = borrower_id);
 
+CREATE POLICY "Users can delete loans they're part of" ON loans
+  FOR DELETE USING (auth.uid() = lender_id OR auth.uid() = borrower_id);
+
 -- Transactions policies (private)
 CREATE POLICY "Users can view their own transactions" ON transactions
   FOR SELECT USING (auth.uid() = user_id);

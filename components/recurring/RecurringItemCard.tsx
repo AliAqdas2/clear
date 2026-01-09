@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { format, parseISO } from 'date-fns'
 import { Calendar, RefreshCw, Edit, Trash2, Power, PowerOff, TrendingUp, TrendingDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import EditRecurringModal from './EditRecurringModal'
 
 interface RecurringItem {
   id: string
@@ -22,11 +23,13 @@ interface RecurringItem {
 
 interface RecurringItemCardProps {
   item: RecurringItem
+  onItemChange?: () => void
 }
 
-export default function RecurringItemCard({ item }: RecurringItemCardProps) {
+export default function RecurringItemCard({ item, onItemChange }: RecurringItemCardProps) {
   const [loading, setLoading] = useState(false)
   const [isActive, setIsActive] = useState(item.is_active)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,7 +44,11 @@ export default function RecurringItemCard({ item }: RecurringItemCardProps) {
 
     if (!error) {
       setIsActive(!isActive)
-      router.refresh()
+      if (onItemChange) {
+        onItemChange()
+      } else {
+        router.refresh()
+      }
     }
     setLoading(false)
   }
@@ -56,7 +63,11 @@ export default function RecurringItemCard({ item }: RecurringItemCardProps) {
       .eq('id', item.id)
 
     if (!error) {
-      router.refresh()
+      if (onItemChange) {
+        onItemChange()
+      } else {
+        router.refresh()
+      }
     }
     setLoading(false)
   }
@@ -162,6 +173,14 @@ export default function RecurringItemCard({ item }: RecurringItemCardProps) {
         {/* Right: Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
+            onClick={() => setIsEditModalOpen(true)}
+            disabled={loading}
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 transition-colors"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
             onClick={handleToggleActive}
             disabled={loading}
             className={`p-2 rounded-lg transition-colors ${
@@ -177,17 +196,24 @@ export default function RecurringItemCard({ item }: RecurringItemCardProps) {
               <Power className="w-4 h-4" />
             )}
           </button>
-
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+            className="p-2 rounded-lg bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 transition-colors"
             title="Delete"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <EditRecurringModal
+        item={item}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={onItemChange}
+      />
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { format, startOfMonth, endOfMonth, differenceInDays } from 'date-fns'
-import TransactionCard from '@/components/transactions/TransactionCard'
+import TransactionsTable from '@/components/transactions/TransactionsTable'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CalendarDays, Info, Receipt } from 'lucide-react'
 
 export default function ThisMonthPage() {
@@ -83,7 +83,7 @@ export default function ThisMonthPage() {
   }
 
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
+    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-8">
       {/* Page Heading & Date Selector */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
         <div className="flex flex-col gap-1">
@@ -178,28 +178,14 @@ export default function ThisMonthPage() {
       </section>
 
       {/* Transactions List */}
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4 overflow-x-hidden">
         <div className="flex items-center justify-between px-2">
           <h3 className="text-xl font-bold text-text-main">Transaction List</h3>
           <button className="text-primary text-sm font-bold hover:underline">View All</button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-100">
-          {data.transactions.length > 0 ? (
-            data.transactions.map((tx) => (
-              <TransactionCard key={tx.id} transaction={tx} />
-            ))
-          ) : (
-            <div className="p-8 text-center">
-              <div className="size-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <Receipt className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-bold text-text-main mb-1">No transactions yet</h3>
-              <p className="text-sm text-text-secondary max-w-sm mx-auto">
-                Add your first expense or income to see where your money goes.
-              </p>
-            </div>
-          )}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <TransactionsTable transactions={data.transactions} />
         </div>
       </section>
     </div>

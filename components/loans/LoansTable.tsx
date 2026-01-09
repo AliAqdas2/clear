@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { format, parseISO, differenceInDays, isPast } from 'date-fns'
-import { ArrowUpRight, ArrowDownLeft, AlertTriangle, Calendar, User, Handshake } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, AlertTriangle, Calendar, User, Handshake, Edit, MoreVertical } from 'lucide-react'
 import LoanRepaymentModal from './LoanRepaymentModal'
+import EditLoanModal from './EditLoanModal'
 
 interface Loan {
   id: string
@@ -21,6 +22,7 @@ interface Loan {
 interface LoansTableProps {
   loans: Loan[]
   userId: string
+  onLoanChange?: () => void
 }
 
 function extractPersonName(notes: string | null): string | null {
@@ -32,11 +34,16 @@ function extractPersonName(notes: string | null): string | null {
   return null
 }
 
-export default function LoansTable({ loans, userId }: LoansTableProps) {
+export default function LoansTable({ loans, userId, onLoanChange }: LoansTableProps) {
   const [selectedLoan, setSelectedLoan] = useState<{
     loan: Loan
     isMyDebt: boolean
     personName: string
+  } | null>(null)
+  const [editingLoan, setEditingLoan] = useState<{
+    loan: Loan
+    personName: string
+    isNonPlatformLoan: boolean
   } | null>(null)
 
   if (!loans || loans.length === 0) {
@@ -163,14 +170,23 @@ export default function LoansTable({ loans, userId }: LoansTableProps) {
                 )}
               </div>
 
-              {/* Settle Button */}
-              <button
-                onClick={() => setSelectedLoan({ loan, isMyDebt, personName })}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:brightness-95 text-text-main font-bold py-3 px-4 rounded-lg transition-all shadow-sm"
-              >
-                <Handshake className="w-4 h-4" />
-                {isMyDebt ? 'Settle Loan' : 'Record Payment'}
-              </button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedLoan({ loan, isMyDebt, personName })}
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary hover:brightness-95 text-text-main font-bold py-3 px-4 rounded-lg transition-all shadow-sm"
+                >
+                  <Handshake className="w-4 h-4" />
+                  {isMyDebt ? 'Settle' : 'Record'}
+                </button>
+                <button
+                  onClick={() => setEditingLoan({ loan, personName, isNonPlatformLoan })}
+                  className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition-all"
+                  aria-label="Edit loan"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )
         })}
@@ -288,13 +304,22 @@ export default function LoansTable({ loans, userId }: LoansTableProps) {
                     )}
                   </td>
                   <td className="py-4 text-right pr-2">
-                    <button 
-                      onClick={() => setSelectedLoan({ loan, isMyDebt, personName })}
-                      className="inline-flex items-center gap-2 text-primary hover:text-primary-hover font-semibold text-sm px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
-                    >
-                      <Handshake className="w-4 h-4" />
-                      {isMyDebt ? 'Settle' : 'Record'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => setSelectedLoan({ loan, isMyDebt, personName })}
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary-hover font-semibold text-sm px-4 py-2 rounded-lg hover:bg-primary/5 transition-colors"
+                      >
+                        <Handshake className="w-4 h-4" />
+                        {isMyDebt ? 'Settle' : 'Record'}
+                      </button>
+                      <button
+                        onClick={() => setEditingLoan({ loan, personName, isNonPlatformLoan })}
+                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+                        aria-label="Edit loan"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )
@@ -311,6 +336,18 @@ export default function LoansTable({ loans, userId }: LoansTableProps) {
           onClose={() => setSelectedLoan(null)}
           isMyDebt={selectedLoan.isMyDebt}
           personName={selectedLoan.personName}
+        />
+      )}
+
+      {/* Edit Loan Modal */}
+      {editingLoan && (
+        <EditLoanModal
+          loan={editingLoan.loan}
+          isOpen={!!editingLoan}
+          onClose={() => setEditingLoan(null)}
+          personName={editingLoan.personName}
+          isNonPlatformLoan={editingLoan.isNonPlatformLoan}
+          onSuccess={onLoanChange}
         />
       )}
     </>

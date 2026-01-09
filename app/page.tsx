@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { 
   Menu, 
   PlayCircle, 
@@ -25,8 +26,8 @@ export default function Home() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-3 text-text-main">
-              <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10">
-                <Image src="/logo.png" alt="Clear" width={32} height={32} className="rounded-lg" />
+              <div className="flex items-center justify-center size-12 rounded-lg">
+                <Image src="/logo.png" alt="Clear" width={48} height={48} className="rounded-lg" />
               </div>
               <h2 className="text-xl font-bold tracking-tight">Clear</h2>
             </div>
@@ -35,11 +36,11 @@ export default function Home() {
               <div className="flex items-center gap-8 mr-4">
                 <a className="text-sm font-semibold text-text-main/80 hover:text-primary transition-colors" href="#features">Features</a>
                 <a className="text-sm font-semibold text-text-main/80 hover:text-primary transition-colors" href="#about">About</a>
-                <a className="text-sm font-semibold text-text-main/80 hover:text-primary transition-colors" href="#login">Login</a>
+                <Link className="text-sm font-semibold text-text-main/80 hover:text-primary transition-colors" href="/login">Login</Link>
               </div>
-              <button className="flex items-center justify-center rounded-lg h-10 px-5 bg-primary hover:bg-primary-hover text-text-main text-sm font-bold shadow-sm transition-colors">
+              <Link href="/signup" className="flex items-center justify-center rounded-lg h-10 px-5 bg-primary hover:bg-primary-hover text-text-main text-sm font-bold shadow-sm transition-colors">
                 <span>Get Started</span>
-              </button>
+              </Link>
             </nav>
             {/* Mobile Menu Button */}
             <button className="md:hidden p-2 text-text-main">
@@ -69,13 +70,13 @@ export default function Home() {
                   Manage your cash flow and social loans with total honesty. No hidden fees. No judgment. Just clear numbers to help you find peace.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 mt-2">
-                  <button className="flex items-center justify-center h-12 px-8 rounded-lg bg-primary hover:bg-primary-hover text-text-main text-base font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
+                  <Link href="/signup" className="flex items-center justify-center h-12 px-8 rounded-lg bg-primary hover:bg-primary-hover text-text-main text-base font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
                     Get Started - It&apos;s Free!
-                  </button>
-                  <button className="flex items-center justify-center h-12 px-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-text-main text-base font-bold transition-colors">
+                  </Link>
+                  <a href="#features" className="flex items-center justify-center h-12 px-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-text-main text-base font-bold transition-colors">
                     <PlayCircle className="mr-2 w-5 h-5" />
                     See how it works
-                  </button>
+                  </a>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-text-muted mt-4">
                   <div className="flex -space-x-2">
@@ -307,9 +308,9 @@ export default function Home() {
                 Join thousands of users finding clarity in their finances today. Start managing your social loans and cash flow without spending a dime.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-                <button className="w-full sm:w-auto flex items-center justify-center h-14 px-8 rounded-xl bg-primary hover:bg-primary-hover text-text-main text-lg font-bold shadow-lg transition-transform hover:-translate-y-1">
+                <Link href="/signup" className="w-full sm:w-auto flex items-center justify-center h-14 px-8 rounded-xl bg-primary hover:bg-primary-hover text-text-main text-lg font-bold shadow-lg transition-transform hover:-translate-y-1">
                   Create Free Account
-                </button>
+                </Link>
               </div>
               <p className="mt-4 text-xs text-text-muted">No credit card required. Instant access.</p>
             </div>

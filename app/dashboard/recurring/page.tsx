@@ -7,6 +7,7 @@ import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react'
 
 export default function RecurringPage() {
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [data, setData] = useState<{
     incomeItems: any[]
     expenseItems: any[]
@@ -68,7 +69,11 @@ export default function RecurringPage() {
     }
 
     fetchData()
-  }, [])
+  }, [refreshKey])
+
+  const handleItemChange = () => {
+    setRefreshKey(prev => prev + 1)
+  }
 
   if (loading || !data) {
     return (
@@ -165,7 +170,7 @@ export default function RecurringPage() {
         {data.incomeItems.length > 0 ? (
           <div className="flex flex-col gap-3">
             {data.incomeItems.map((item) => (
-              <RecurringItemCard key={item.id} item={item} />
+              <RecurringItemCard key={item.id} item={item} onItemChange={handleItemChange} />
             ))}
           </div>
         ) : (
@@ -194,7 +199,7 @@ export default function RecurringPage() {
         {data.expenseItems.length > 0 ? (
           <div className="flex flex-col gap-3">
             {data.expenseItems.map((item) => (
-              <RecurringItemCard key={item.id} item={item} />
+              <RecurringItemCard key={item.id} item={item} onItemChange={handleItemChange} />
             ))}
           </div>
         ) : (

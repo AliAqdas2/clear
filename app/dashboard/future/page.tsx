@@ -3,17 +3,24 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoansTable from '@/components/loans/LoansTable'
-import { TrendingDown, ArrowDown, ArrowUp, Scale } from 'lucide-react'
+import { Wallet, ArrowDown, ArrowUp, Handshake, RefreshCw, Calendar } from 'lucide-react'
+import { startOfMonth, endOfMonth, addMonths, format, isWithinInterval, parseISO } from 'date-fns'
 
 export default function FuturePage() {
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [data, setData] = useState<{
     loans: any[]
-    totalLoansOnMe: number
-    willReceive: number
-    mustPay: number
-    netPosition: number
-    debtPercentage: number
+    // Next month breakdown
+    loansToPay: number
+    loansToReceive: number
+    recurringExpenses: number
+    recurringIncome: number
+    // Totals
+    totalComingIn: number
+    totalGoingOut: number
+    netCashFlow: number
+    netCashFlowWithoutLoans: number
   } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -25,6 +32,14 @@ export default function FuturePage() {
       if (!user) return
 
       setUserId(user.id)
+
+      // Calculate next month date range
+      const now = new Date()
+      const nextMonth = addMonths(now, 1)
+      const nextMonthStart = startOfMonth(nextMonth)
+      const nextMonthEnd = endOfMonth(nextMonth)
+      const nextMonthStartStr = format(nextMonthStart, 'yyyy-MM-dd')
+      const nextMonthEndStr = format(nextMonthEnd, 'yyyy-MM-dd')
 
       // Fetch loans where user is lender or borrower
       const { data: loans } = await supabase
@@ -39,200 +54,225 @@ export default function FuturePage() {
         .from('recurring_items')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .order('next_date', { ascending: true })
 
-      // Calculate totals
-      let totalLoansOnMe = 0
-      let willReceive = 0
-      let mustPay = 0
+      // Calculate next month's breakdown
+      let loansToPay = 0
+      let loansToReceive = 0
+      let recurringExpenses = 0
+      let recurringIncome = 0
 
+      // Calculate loans due next month
       loans?.forEach((loan) => {
+        const dueDate = parseISO(loan.due_date)
+        const isNextMonth = isWithinInterval(dueDate, { start: nextMonthStart, end: nextMonthEnd })
+        
+        if (!isNextMonth) return
+
         const remainingAmount = Number(loan.remaining_amount || loan.amount)
         const isNonPlatformLoan = loan.lender_id === loan.borrower_id
         
         if (isNonPlatformLoan) {
           const isBorrowed = loan.notes?.startsWith('From:')
           if (isBorrowed) {
-            totalLoansOnMe += remainingAmount
-            mustPay += remainingAmount
+            loansToPay += remainingAmount
           } else {
-            willReceive += remainingAmount
+            loansToReceive += remainingAmount
           }
         } else if (loan.borrower_id === user.id) {
-          totalLoansOnMe += remainingAmount
-          mustPay += remainingAmount
+          loansToPay += remainingAmount
         } else {
-          willReceive += remainingAmount
+          loansToReceive += remainingAmount
         }
       })
 
-      // Add recurring items
+      // Calculate recurring items due next month
       recurringItems?.forEach((item) => {
+        const nextDate = parseISO(item.next_date)
+        const isNextMonth = isWithinInterval(nextDate, { start: nextMonthStart, end: nextMonthEnd })
+        
+        if (!isNextMonth) return
+
+        const amount = Number(item.amount)
         if (item.type === 'income' || item.type === 'salary') {
-          willReceive += Number(item.amount)
+          recurringIncome += amount
         } else {
-          mustPay += Number(item.amount)
+          recurringExpenses += amount
         }
       })
 
-      const netPosition = willReceive - mustPay
-      const maxDebt = Math.max(totalLoansOnMe, willReceive, 1)
-      const debtPercentage = (totalLoansOnMe / maxDebt) * 100 * 0.75
+      // Calculate totals
+      const totalComingIn = loansToReceive + recurringIncome
+      const totalGoingOut = loansToPay + recurringExpenses
+      const netCashFlow = totalComingIn - totalGoingOut
+      const netCashFlowWithoutLoans = recurringIncome - recurringExpenses
 
       setData({
         loans: loans || [],
-        totalLoansOnMe,
-        willReceive,
-        mustPay,
-        netPosition,
-        debtPercentage,
+        loansToPay,
+        loansToReceive,
+        recurringExpenses,
+        recurringIncome,
+        totalComingIn,
+        totalGoingOut,
+        netCashFlow,
+        netCashFlowWithoutLoans,
       })
       setLoading(false)
     }
 
     fetchData()
-  }, [])
+  }, [refreshKey])
+
+  const handleLoanChange = () => {
+    setRefreshKey(prev => prev + 1)
+  }
 
   if (loading || !data || !userId) {
     return (
       <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8">
-        <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full">
-          <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px]">
-            <div className="w-full h-full bg-gray-200 rounded-full animate-pulse"></div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
-            ))}
-          </div>
+        <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+          ))}
         </div>
       </div>
     )
   }
 
+  const nextMonthName = format(addMonths(new Date(), 1), 'MMMM yyyy')
+
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto pb-24 md:pb-8 min-w-0">
-      {/* Header Visualization Section */}
-      <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 w-full min-w-0">
-        {/* Debt Meter - Responsive, matches other pages */}
-        <div className="relative flex items-center justify-center w-full aspect-square max-w-[240px] sm:max-w-[280px] md:max-w-[320px] flex-shrink-0">
-          <div className="absolute inset-0 bg-danger/10 blur-3xl rounded-full"></div>
-          
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            <circle
-              className="text-gray-200"
-              cx="50"
-              cy="50"
-              fill="none"
-              r="45"
-              stroke="currentColor"
-              strokeWidth="8"
-            />
-            <circle
-              className="text-danger transition-all duration-1000 ease-out"
-              cx="50"
-              cy="50"
-              fill="none"
-              r="45"
-              stroke="currentColor"
-              strokeDasharray="283"
-              strokeDashoffset={283 - (283 * Math.min(data.debtPercentage, 75)) / 100}
-              strokeLinecap="round"
-              strokeWidth="8"
-            />
-          </svg>
-          
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-            <div className="p-2 sm:p-3 bg-danger/10 rounded-full mb-1 sm:mb-2">
-              <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-danger" />
-            </div>
-            <span className="text-xs sm:text-sm font-medium text-text-secondary uppercase tracking-wider mb-1">
-              Loans on Me
-            </span>
-            <span className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main tracking-tight break-words text-center">
-              {data.totalLoansOnMe >= 1000 ? `${(data.totalLoansOnMe / 1000).toFixed(0)}k` : data.totalLoansOnMe.toLocaleString()}
-            </span>
-            <span className="text-[10px] sm:text-xs font-medium text-danger mt-1">PKR Total Exposure</span>
-          </div>
-        </div>
-
-        {/* Summary Stats Cards */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4 min-w-0">
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300">
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              <div className="p-2 bg-success/10 rounded-lg">
-                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-text-secondary">Will Receive</span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold text-text-main mb-1">
-              <span className="text-success">+</span> {data.willReceive.toLocaleString()}
-            </div>
-            <p className="text-[10px] sm:text-xs font-medium text-success bg-success/5 px-2 py-0.5 sm:py-1 rounded-full">
-              Expected income
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16 bg-danger/5 rounded-bl-full -mr-2 -mt-2"></div>
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              <div className="p-2 bg-danger/10 rounded-lg">
-                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-danger" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-text-secondary">Must Pay</span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold text-text-main mb-1">
-              <span className="text-danger">-</span> {data.mustPay.toLocaleString()}
-            </div>
-            <p className="text-[10px] sm:text-xs font-medium text-danger bg-danger/5 px-2 py-0.5 sm:py-1 rounded-full">
-              Upcoming obligations
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 sm:p-6 border border-info/20 shadow-md flex flex-col items-center md:items-start transition-transform hover:-translate-y-1 duration-300 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-info rounded-l-xl"></div>
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              <div className="p-2 bg-info/10 rounded-lg">
-                <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-text-secondary">Net Future Position</span>
-            </div>
-            <div className={`text-2xl sm:text-3xl font-bold mb-1 ${data.netPosition >= 0 ? 'text-info' : 'text-danger'}`}>
-              {data.netPosition >= 0 ? '+' : ''} {data.netPosition.toLocaleString()}
-            </div>
-            <p className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full ${
-              data.netPosition >= 0 ? 'text-info bg-info/5' : 'text-danger bg-danger/5'
-            }`}>
-              {data.netPosition >= 0 ? 'Healthy Liquidity' : 'Deficit Warning'}
-            </p>
+    <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8 overflow-y-auto pb-24 md:pb-8 min-w-0">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-text-main">Next Month</h1>
+          <div className="flex items-center gap-2 text-text-secondary font-medium">
+            <span className="inline-block size-2 rounded-full bg-primary animate-pulse"></span>
+            <span>Forecast for {nextMonthName}</span>
           </div>
         </div>
       </div>
+
+      {/* Hero: Net Cash Flow */}
+      <section className="flex flex-col items-center justify-center py-8 sm:py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+        <h2 className="text-text-secondary text-lg sm:text-xl font-semibold mb-2 flex items-center gap-2">
+          <Wallet className="w-5 h-5 text-primary" />
+          <span>Net Cash Flow</span>
+        </h2>
+        <div className={`text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter mb-4 ${
+          data.netCashFlow >= 0 ? 'text-success' : 'text-danger'
+        }`}>
+          {data.netCashFlow >= 0 ? '+' : ''}PKR {Math.abs(data.netCashFlow).toLocaleString()}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 text-sm">
+          <p className={`px-3 py-1.5 rounded-full border font-medium ${
+            data.netCashFlow >= 0 
+              ? 'text-success bg-success/10 border-success/20' 
+              : 'text-danger bg-danger/10 border-danger/20'
+          }`}>
+            {data.netCashFlow >= 0 ? '✅ Positive' : '⚠️ Deficit'}
+          </p>
+          <p className="text-text-secondary px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 font-medium">
+            Without loans: {data.netCashFlowWithoutLoans >= 0 ? '+' : ''}PKR {Math.abs(data.netCashFlowWithoutLoans).toLocaleString()}
+          </p>
+        </div>
+      </section>
+
+      {/* Breakdown Cards */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Coming In */}
+        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-4 text-text-secondary font-semibold text-sm">
+            <span className="size-2 rounded-full bg-success"></span>
+            COMING IN
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Handshake className="w-4 h-4 text-success" />
+                <span className="text-sm text-text-secondary">From Loans</span>
+              </div>
+              <span className="text-lg font-bold text-success">
+                +PKR {data.loansToReceive.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-success" />
+                <span className="text-sm text-text-secondary">Recurring Income</span>
+              </div>
+              <span className="text-lg font-bold text-success">
+                +PKR {data.recurringIncome.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
+              <span className="font-bold text-text-main">Total</span>
+              <span className="text-2xl font-black text-success">
+                +PKR {data.totalComingIn.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Going Out */}
+        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-4 text-text-secondary font-semibold text-sm">
+            <span className="size-2 rounded-full bg-danger"></span>
+            GOING OUT
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Handshake className="w-4 h-4 text-danger" />
+                <span className="text-sm text-text-secondary">Loan Payments</span>
+              </div>
+              <span className="text-lg font-bold text-danger">
+                -PKR {data.loansToPay.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-danger" />
+                <span className="text-sm text-text-secondary">Recurring Expenses</span>
+              </div>
+              <span className="text-lg font-bold text-danger">
+                -PKR {data.recurringExpenses.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
+              <span className="font-bold text-text-main">Total</span>
+              <span className="text-2xl font-black text-danger">
+                -PKR {data.totalGoingOut.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Commitments List Section */}
-      <div className="flex flex-col gap-4 sm:gap-6 bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 w-full min-w-0 overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex items-center justify-between px-2">
           <div>
-            <h3 className="text-lg sm:text-xl font-bold text-text-main">Commitments List</h3>
-            <p className="text-xs sm:text-sm text-text-secondary">Upcoming payments and receivables.</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-text-main text-xs sm:text-sm font-bold shadow-sm transition-colors hover:brightness-95">
-              All
-            </button>
-            <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-background-light text-text-secondary text-xs sm:text-sm font-medium border border-transparent hover:border-gray-200 transition-all">
-              Owed by Me
-            </button>
-            <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-background-light text-text-secondary text-xs sm:text-sm font-medium border border-transparent hover:border-gray-200 transition-all">
-              Owed to Me
-            </button>
+            <h3 className="text-xl sm:text-2xl font-black text-text-main">Commitments</h3>
+            <p className="text-xs sm:text-sm text-text-secondary mt-1">Upcoming payments and receivables</p>
           </div>
         </div>
 
-        {/* Loans List - Mobile cards, Desktop table */}
-        <LoansTable loans={data.loans} userId={userId} />
-      </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <LoansTable loans={data.loans} userId={userId} onLoanChange={handleLoanChange} />
+        </div>
+      </section>
     </div>
   )
 }

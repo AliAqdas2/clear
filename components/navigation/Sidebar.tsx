@@ -50,8 +50,8 @@ function Sidebar({ profile }: SidebarProps) {
       <aside className="w-64 flex-shrink-0 bg-surface-light border-r border-border-light hidden md:flex flex-col h-screen sticky top-0 transition-colors duration-200">
         {/* Logo Area */}
         <div className="h-16 flex items-center gap-3 px-6 border-b border-border-light">
-          <div className="size-8 flex items-center justify-center bg-primary rounded-lg text-white">
-            <Image src="/logo.png" alt="Clear" width={24} height={24} className="rounded" />
+          <div className="size-12 flex items-center justify-center bg-primary rounded-lg">
+            <Image src="/logo.png" alt="Clear" width={48} height={48} className="rounded" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-text-main">Clear</h1>
         </div>

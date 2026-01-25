@@ -10,9 +10,10 @@ Create a `.env.local` file in the root directory with the following variables:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-1.5-flash  # Optional: gemini-1.5-flash (fast) or gemini-1.5-pro (better quality)
 ```
 
-**Note**: The `GEMINI_API_KEY` is required for the AI chatbot feature. You can get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+**Note**: The `GEMINI_API_KEY` is required for the AI chatbot feature. You can get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey). The `GEMINI_MODEL` is optional and defaults to `gemini-1.5-flash` for faster responses.
 
 ### Installation
 

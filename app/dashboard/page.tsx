@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Wallet,
   Calendar,
+  User,
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -30,8 +31,7 @@ export default function DashboardPage() {
     recurringExpensesCount: number
   } | null>(null)
 
-  useEffect(() => {
-    async function fetchData() {
+  const fetchData = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -123,7 +123,18 @@ export default function DashboardPage() {
       setLoading(false)
     }
 
+  useEffect(() => {
     fetchData()
+    
+    // Listen for data refresh events
+    const handleRefresh = () => {
+      fetchData()
+    }
+    window.addEventListener('data-refresh', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('data-refresh', handleRefresh)
+    }
   }, [])
 
   if (loading || !data) {
@@ -273,7 +284,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <Link
           href="/dashboard/this-month"
           className="flex items-center gap-3 p-4 bg-white rounded-xl border border-border-light hover:border-primary/50 transition-all group"
@@ -296,6 +307,14 @@ export default function DashboardPage() {
         >
           <RefreshCw className="w-5 h-5 text-primary" />
           <span className="font-medium text-text-main group-hover:text-primary transition-colors">Manage Recurring</span>
+          <ArrowRight className="w-4 h-4 text-text-secondary ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
+        </Link>
+        <Link
+          href="/dashboard/profile"
+          className="flex items-center gap-3 p-4 bg-white rounded-xl border border-border-light hover:border-primary/50 transition-all group md:hidden"
+        >
+          <User className="w-5 h-5 text-primary" />
+          <span className="font-medium text-text-main group-hover:text-primary transition-colors">Profile</span>
           <ArrowRight className="w-4 h-4 text-text-secondary ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </Link>
       </div>

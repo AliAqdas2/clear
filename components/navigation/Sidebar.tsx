@@ -47,7 +47,7 @@ function Sidebar({ profile }: SidebarProps) {
 
   return (
     <>
-      <aside className="w-64 flex-shrink-0 bg-surface-light border-r border-border-light hidden md:flex flex-col h-screen sticky top-0 transition-colors duration-200">
+      <aside className="w-64 flex-shrink-0 bg-surface-light border-r border-border-light hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 transition-colors duration-200">
         {/* Logo Area */}
         <div className="h-16 flex items-center gap-3 px-6 border-b border-border-light">
           <div className="size-12 flex items-center justify-center bg-primary rounded-lg">

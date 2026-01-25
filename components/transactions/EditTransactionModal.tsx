@@ -115,7 +115,10 @@ export default function EditTransactionModal({
 
       if (updateError) throw updateError
 
-      router.refresh()
+      // Trigger refresh event instead of router.refresh()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to update transaction')
@@ -141,7 +144,10 @@ export default function EditTransactionModal({
       if (deleteError) throw deleteError
 
       if (onDelete) onDelete()
-      router.refresh()
+      // Trigger refresh event instead of router.refresh()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to delete transaction')

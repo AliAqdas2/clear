@@ -24,8 +24,7 @@ export default function FuturePage() {
   } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchData() {
+  const fetchData = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -122,7 +121,18 @@ export default function FuturePage() {
       setLoading(false)
     }
 
+  useEffect(() => {
     fetchData()
+    
+    // Listen for data refresh events
+    const handleRefresh = () => {
+      fetchData()
+    }
+    window.addEventListener('data-refresh', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('data-refresh', handleRefresh)
+    }
   }, [refreshKey])
 
   const handleLoanChange = () => {

@@ -10,11 +10,12 @@ import { X, Wallet, TrendingUp, Handshake, RefreshCw } from 'lucide-react'
 interface AddModalProps {
   isOpen: boolean
   onClose: () => void
+  onItemAdded?: () => void
 }
 
 type ModalStep = 'select' | 'expense' | 'income' | 'loan' | 'recurring'
 
-export default function AddModal({ isOpen, onClose }: AddModalProps) {
+export default function AddModal({ isOpen, onClose, onItemAdded }: AddModalProps) {
   const [currentStep, setCurrentStep] = useState<ModalStep>('select')
 
   if (!isOpen) return null
@@ -27,8 +28,14 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
   const handleSuccess = () => {
     setCurrentStep('select')
     onClose()
-    // Refresh the page data
-    window.location.reload()
+    // Trigger refresh callback instead of full page reload
+    if (onItemAdded) {
+      onItemAdded()
+    }
+    // Also dispatch a custom event for pages that might be listening
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('data-refresh'))
+    }
   }
 
   const options = [

@@ -81,15 +81,14 @@ export default function EditLoanModal({
 
       if (updateError) throw updateError
 
-      onClose()
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       if (onSuccess) {
         onSuccess()
-      } else {
-        // Fallback to page reload if no callback provided
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       }
+      onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to update loan')
     } finally {
@@ -119,16 +118,14 @@ export default function EditLoanModal({
         throw deleteError
       }
 
-      // Close modal first
-      onClose()
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       if (onSuccess) {
         onSuccess()
-      } else {
-        // Fallback to page reload if no callback provided
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       }
+      onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to delete loan')
       setLoading(false)

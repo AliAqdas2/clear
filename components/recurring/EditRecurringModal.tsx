@@ -132,14 +132,14 @@ export default function EditRecurringModal({
 
       if (updateError) throw updateError
 
-      onClose()
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       if (onSuccess) {
         onSuccess()
-      } else {
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       }
+      onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to update recurring item')
     } finally {
@@ -163,14 +163,14 @@ export default function EditRecurringModal({
 
       if (deleteError) throw deleteError
 
-      onClose()
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       if (onSuccess) {
         onSuccess()
-      } else {
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       }
+      onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to delete recurring item')
     } finally {

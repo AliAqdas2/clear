@@ -130,9 +130,12 @@ export default function LoanRepaymentModal({
     }
 
     setSuccess(true)
+    // Trigger refresh event instead of router.refresh()
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('data-refresh'))
+    }
     setTimeout(() => {
       onClose()
-      router.refresh()
     }, 1500)
   }
 

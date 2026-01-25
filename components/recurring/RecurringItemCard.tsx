@@ -46,8 +46,10 @@ export default function RecurringItemCard({ item, onItemChange }: RecurringItemC
       setIsActive(!isActive)
       if (onItemChange) {
         onItemChange()
-      } else {
-        router.refresh()
+      }
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
       }
     }
     setLoading(false)
@@ -65,8 +67,10 @@ export default function RecurringItemCard({ item, onItemChange }: RecurringItemC
     if (!error) {
       if (onItemChange) {
         onItemChange()
-      } else {
-        router.refresh()
+      }
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
       }
     }
     setLoading(false)

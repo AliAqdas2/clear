@@ -37,20 +37,32 @@ export default function FriendCard({ friendship, currentUserId, balance, isPendi
 
   const handleAccept = async () => {
     setLoading(true)
-    await supabase
+    const { error } = await supabase
       .from('friendships')
       .update({ status: 'accepted' })
       .eq('id', friendship.id)
-    window.location.reload()
+    if (!error) {
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
+    }
+    setLoading(false)
   }
 
   const handleDecline = async () => {
     setLoading(true)
-    await supabase
+    const { error } = await supabase
       .from('friendships')
       .delete()
       .eq('id', friendship.id)
-    window.location.reload()
+    if (!error) {
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
+    }
+    setLoading(false)
   }
 
   const initials = (friend.username || 'U').substring(0, 2).toUpperCase()

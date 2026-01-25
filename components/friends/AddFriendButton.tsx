@@ -83,10 +83,13 @@ export default function AddFriendButton() {
     } else {
       setSuccess(true)
       setUsername('')
+      // Trigger refresh event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('data-refresh'))
+      }
       setTimeout(() => {
         setIsOpen(false)
         setSuccess(false)
-        window.location.reload()
       }, 1500)
     }
 

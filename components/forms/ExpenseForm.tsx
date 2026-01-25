@@ -32,8 +32,10 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const now = new Date()
       const amount = parseFloat(formData.amount)
+      const dateObj = new Date(formData.date)
+      const month = dateObj.getMonth() + 1
+      const year = dateObj.getFullYear()
 
       // If recurring, create a recurring item
       if (isRecurring) {
@@ -51,7 +53,7 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
         if (recurringError) throw recurringError
       }
 
-      // Always create the transaction for this month
+      // Always create the transaction for the selected date's month
       const { error: insertError } = await supabase.from('transactions').insert({
         user_id: user.id,
         type: 'expense',
@@ -59,8 +61,8 @@ export default function ExpenseForm({ onSuccess, onCancel }: ExpenseFormProps) {
         category: formData.category,
         description: formData.description || null,
         date: formData.date,
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
+        month,
+        year,
       })
 
       if (insertError) throw insertError

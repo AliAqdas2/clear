@@ -311,9 +311,9 @@ Please provide helpful, actionable advice. Be specific about amounts in PKR (Pak
 
     // Initialize Gemini model
     const genAI = getGenAI()
-    // Use gemini-1.5-flash for faster responses, or gemini-1.5-pro for better quality
-    // Available models: gemini-1.5-flash, gemini-1.5-pro, gemini-pro (deprecated)
-    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+    // Use gemini-2.5-flash (latest fast model with thinking capabilities) or gemini-1.5-pro for better quality
+    // Available models: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-pro
+    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
     const model = genAI.getGenerativeModel({ model: modelName })
 
     // Create streaming response

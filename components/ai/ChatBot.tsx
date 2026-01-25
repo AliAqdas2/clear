@@ -231,12 +231,18 @@ export default function ChatBot() {
                   : 'bg-white text-text-main border border-gray-200'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {message.content}
-                {message.isStreaming && (
-                  <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
-                )}
-              </p>
+              {message.role === 'assistant' ? (
+                <div 
+                  className="text-sm break-words [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-bold [&_strong]:text-text-main [&_em]:italic [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_li]:mb-1 [&_h3]:font-bold [&_h3]:text-base [&_h3]:mb-2 [&_h3]:mt-3 [&_h4]:font-semibold [&_h4]:text-sm [&_h4]:mb-1 [&_h4]:mt-2 [&_br]:block"
+                  dangerouslySetInnerHTML={{ 
+                    __html: message.content + (message.isStreaming ? '<span class="inline-block w-2 h-4 bg-primary ml-1 animate-pulse"></span>' : '')
+                  }}
+                />
+              ) : (
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {message.content}
+                </p>
+              )}
             </div>
             {message.role === 'user' && (
               <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">

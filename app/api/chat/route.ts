@@ -307,6 +307,14 @@ ${financialContext.summary}
 
 User's question: ${message}
 
+IMPORTANT: Format your response as HTML. Use HTML tags like <p>, <strong>, <em>, <ul>, <li>, <h3>, <h4>, etc. Do NOT include <body>, <head>, or <html> tags - just the content. Use proper HTML formatting for:
+- Bold text: <strong>text</strong>
+- Italic text: <em>text</em>
+- Lists: <ul><li>item</li></ul>
+- Headings: <h3>heading</h3> or <h4>heading</h4>
+- Paragraphs: <p>text</p>
+- Line breaks: <br/>
+
 Please provide helpful, actionable advice. Be specific about amounts in PKR (Pakistani Rupees). If the user asks about affordability or whether they can afford something, analyze their current/future cash flow based on the financial data provided. Be conversational and friendly, but also precise with numbers. Keep your response concise but informative.`
 
     // Initialize Gemini model
